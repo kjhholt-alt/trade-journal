@@ -1,0 +1,8 @@
+fastapi>=0.115.0
+uvicorn>=0.30.0
+sqlalchemy>=2.0.35
+# psycopg2-binary>=2.9.9  # Uncomment when switching to PostgreSQL
+anthropic>=0.39.0
+python-multipart>=0.0.12
+pydantic>=2.9.0
+pandas>=2.2.3
