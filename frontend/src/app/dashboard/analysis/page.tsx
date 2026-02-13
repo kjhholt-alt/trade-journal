@@ -1,6 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Brain,
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  LineChart,
+  Target,
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface AnalysisResult {
   strengths: string[];
@@ -20,7 +33,7 @@ const MOCK_ANALYSIS: AnalysisResult = {
     "Overtrading in the afternoon session (2:00-4:00 PM) leading to net losses",
     "FOMO entries on breakouts result in 60% loss rate",
     "Position sizes increase after winning streaks, amplifying subsequent losses",
-    "Holding losing trades too long - average loss duration 3x average win duration",
+    "Holding losing trades too long -- average loss duration 3x average win duration",
   ],
   patterns: [
     "Tuesday and Thursday are your most profitable days (avg +$340/day)",
@@ -30,12 +43,55 @@ const MOCK_ANALYSIS: AnalysisResult = {
   ],
   recommendations: [
     "Set a daily trade limit of 3 trades to prevent overtrading",
-    "Focus morning session only - your edge disappears after lunch",
+    "Focus morning session only -- your edge disappears after lunch",
     "Size down by 25% after 2 consecutive wins to prevent overconfidence",
     "Add a mandatory 15-minute cooldown period after any losing trade",
     "Consider focusing exclusively on your top 3 performing tickers",
   ],
 };
+
+const sections = [
+  {
+    key: "strengths" as const,
+    title: "Strengths",
+    icon: <TrendingUp className="w-4 h-4" />,
+    color: "emerald",
+    gradient: "from-emerald-500/10 to-green-500/10",
+    borderColor: "border-emerald-800/30",
+    iconBg: "bg-emerald-500/15 text-emerald-400",
+    bulletColor: "bg-emerald-400",
+  },
+  {
+    key: "weaknesses" as const,
+    title: "Weaknesses",
+    icon: <TrendingDown className="w-4 h-4" />,
+    color: "red",
+    gradient: "from-red-500/10 to-orange-500/10",
+    borderColor: "border-red-800/30",
+    iconBg: "bg-red-500/15 text-red-400",
+    bulletColor: "bg-red-400",
+  },
+  {
+    key: "patterns" as const,
+    title: "Patterns Detected",
+    icon: <LineChart className="w-4 h-4" />,
+    color: "blue",
+    gradient: "from-blue-500/10 to-cyan-500/10",
+    borderColor: "border-blue-800/30",
+    iconBg: "bg-blue-500/15 text-blue-400",
+    bulletColor: "bg-blue-400",
+  },
+  {
+    key: "recommendations" as const,
+    title: "Recommendations",
+    icon: <Target className="w-4 h-4" />,
+    color: "purple",
+    gradient: "from-purple-500/10 to-brand-500/10",
+    borderColor: "border-purple-800/30",
+    iconBg: "bg-purple-500/15 text-purple-400",
+    bulletColor: "bg-purple-400",
+  },
+];
 
 export default function AnalysisPage() {
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
@@ -49,12 +105,10 @@ export default function AnalysisPage() {
         const data = await res.json();
         setAnalysis(data);
       } else {
-        // Fall back to mock data if backend isn't available
         await new Promise((r) => setTimeout(r, 1500));
         setAnalysis(MOCK_ANALYSIS);
       }
     } catch {
-      // Use mock data for demo
       await new Promise((r) => setTimeout(r, 1500));
       setAnalysis(MOCK_ANALYSIS);
     } finally {
@@ -63,160 +117,111 @@ export default function AnalysisPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">AI Analysis</h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-gray-400 text-sm mt-1">
             Get AI-powered coaching on your trading patterns
           </p>
         </div>
-        <button
-          onClick={runAnalysis}
-          disabled={loading}
-          className="px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2"
-        >
+        <Button onClick={runAnalysis} disabled={loading} size="lg">
           {loading ? (
             <>
-              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Analyzing...
             </>
           ) : (
-            "Run New Analysis"
+            <>
+              <Sparkles className="w-4 h-4 mr-2" />
+              Run New Analysis
+            </>
           )}
-        </button>
+        </Button>
       </div>
 
-      {!analysis && !loading && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
-          <svg className="w-16 h-16 mx-auto text-gray-600 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
-          <p className="text-gray-400 text-lg mb-2">No analysis yet</p>
-          <p className="text-gray-500 text-sm">
-            Click &quot;Run New Analysis&quot; to get AI-powered insights on your trading
-          </p>
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {!analysis && !loading && (
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <Card className="border-dashed">
+              <CardContent className="py-16 text-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-brand-600/20 to-purple-600/20 flex items-center justify-center border border-brand-600/20">
+                  <Brain className="w-9 h-9 text-brand-400" />
+                </div>
+                <p className="text-gray-300 text-lg font-medium mb-2">No analysis yet</p>
+                <p className="text-gray-500 text-sm max-w-sm mx-auto">
+                  Click &quot;Run New Analysis&quot; to get AI-powered insights
+                  on your trading patterns and personalized coaching advice.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
-      {loading && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-12 text-center">
-          <svg className="animate-spin w-12 h-12 mx-auto text-brand-500 mb-4" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          <p className="text-gray-400 text-lg mb-2">Analyzing your trades...</p>
-          <p className="text-gray-500 text-sm">
-            Our AI is reviewing your trading patterns and generating coaching advice
-          </p>
-        </div>
-      )}
+        {loading && (
+          <motion.div
+            key="loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <Card>
+              <CardContent className="py-16 text-center">
+                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-brand-600/20 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-brand-400 animate-spin" />
+                </div>
+                <p className="text-gray-300 text-lg font-medium mb-2">Analyzing your trades...</p>
+                <p className="text-gray-500 text-sm">
+                  Our AI is reviewing your patterns and generating coaching advice
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
-      {analysis && !loading && (
-        <div className="grid md:grid-cols-2 gap-6">
-          <AnalysisSection
-            title="Strengths"
-            items={analysis.strengths}
-            color="green"
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            }
-          />
-          <AnalysisSection
-            title="Weaknesses"
-            items={analysis.weaknesses}
-            color="red"
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            }
-          />
-          <AnalysisSection
-            title="Patterns Detected"
-            items={analysis.patterns}
-            color="blue"
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-              </svg>
-            }
-          />
-          <AnalysisSection
-            title="Recommendations"
-            items={analysis.recommendations}
-            color="purple"
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-            }
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AnalysisSection({
-  title,
-  items,
-  color,
-  icon,
-}: {
-  title: string;
-  items: string[];
-  color: "green" | "red" | "blue" | "purple";
-  icon: React.ReactNode;
-}) {
-  const colorMap = {
-    green: {
-      bg: "bg-green-900/20",
-      border: "border-green-800",
-      icon: "text-green-400",
-      bullet: "bg-green-400",
-    },
-    red: {
-      bg: "bg-red-900/20",
-      border: "border-red-800",
-      icon: "text-red-400",
-      bullet: "bg-red-400",
-    },
-    blue: {
-      bg: "bg-blue-900/20",
-      border: "border-blue-800",
-      icon: "text-blue-400",
-      bullet: "bg-blue-400",
-    },
-    purple: {
-      bg: "bg-purple-900/20",
-      border: "border-purple-800",
-      icon: "text-purple-400",
-      bullet: "bg-purple-400",
-    },
-  };
-
-  const c = colorMap[color];
-
-  return (
-    <div className={`${c.bg} border ${c.border} rounded-xl p-6`}>
-      <div className="flex items-center gap-2 mb-4">
-        <div className={c.icon}>{icon}</div>
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
-      </div>
-      <ul className="space-y-3">
-        {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-3 text-sm text-gray-300">
-            <div className={`w-1.5 h-1.5 ${c.bullet} rounded-full mt-2 flex-shrink-0`} />
-            {item}
-          </li>
-        ))}
-      </ul>
+        {analysis && !loading && (
+          <motion.div
+            key="results"
+            initial="hidden"
+            animate="visible"
+            variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+            className="grid md:grid-cols-2 gap-5"
+          >
+            {sections.map((s) => (
+              <motion.div
+                key={s.key}
+                variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+              >
+                <Card className={cn("h-full", s.borderColor)}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center", s.iconBg)}>
+                        {s.icon}
+                      </div>
+                      <CardTitle>{s.title}</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {analysis[s.key].map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-sm text-gray-300 leading-relaxed">
+                          <div className={cn("w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0", s.bulletColor)} />
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

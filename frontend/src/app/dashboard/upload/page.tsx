@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useCallback, DragEvent, ChangeEvent } from "react";
+import { motion } from "framer-motion";
 import Papa from "papaparse";
+import { Upload, FileSpreadsheet, Check, AlertCircle, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface ParsedRow {
   [key: string]: string;
@@ -42,16 +48,13 @@ export default function UploadPage() {
   const handleFile = useCallback((f: File) => {
     setFile(f);
     setUploadResult(null);
-
     Papa.parse(f, {
       header: true,
       skipEmptyLines: true,
       complete: (results) => {
         const data = results.data as ParsedRow[];
         setParsedData(data);
-        if (data.length > 0) {
-          setHeaders(Object.keys(data[0]));
-        }
+        if (data.length > 0) setHeaders(Object.keys(data[0]));
       },
       error: () => {
         setParsedData([]);
@@ -64,9 +67,7 @@ export default function UploadPage() {
     e.preventDefault();
     setDragOver(false);
     const f = e.dataTransfer.files[0];
-    if (f && f.name.endsWith(".csv")) {
-      handleFile(f);
-    }
+    if (f && f.name.endsWith(".csv")) handleFile(f);
   }
 
   function onFileChange(e: ChangeEvent<HTMLInputElement>) {
@@ -78,18 +79,12 @@ export default function UploadPage() {
     if (!file) return;
     setUploading(true);
     setUploadResult(null);
-
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("broker", broker);
-
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const res = await fetch(`${apiUrl}/trades/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
+      const res = await fetch(`${apiUrl}/trades/upload`, { method: "POST", body: formData });
       if (res.ok) {
         const data = await res.json();
         setUploadResult(`Successfully uploaded ${data.trades_count || parsedData.length} trades.`);
@@ -106,146 +101,164 @@ export default function UploadPage() {
   const previewRows = parsedData.slice(0, 10);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Upload Trades</h1>
-        <p className="text-gray-400 mt-1">Import your trade history from a CSV file</p>
+        <p className="text-gray-400 text-sm mt-1">Import your trade history from a CSV file</p>
       </div>
 
       {/* Broker Selection */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-        <h3 className="text-sm font-medium text-gray-300 mb-3">Broker Format</h3>
-        <div className="flex gap-3">
-          {(["auto", "td_ameritrade", "robinhood"] as BrokerFormat[]).map((b) => (
-            <button
-              key={b}
-              onClick={() => setBroker(b)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                broker === b
-                  ? "bg-brand-600 text-white"
-                  : "bg-gray-800 text-gray-400 hover:text-white"
-              }`}
-            >
-              {b === "auto" ? "Auto Detect" : b === "td_ameritrade" ? "TD Ameritrade" : "Robinhood"}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium text-gray-300">Broker Format</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-2">
+            {(["auto", "td_ameritrade", "robinhood"] as BrokerFormat[]).map((b) => (
+              <Button
+                key={b}
+                variant={broker === b ? "default" : "outline"}
+                size="sm"
+                onClick={() => setBroker(b)}
+              >
+                {b === "auto" ? "Auto Detect" : b === "td_ameritrade" ? "TD Ameritrade" : "Robinhood"}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Drop Zone */}
-      <div
+      <motion.div
         onDrop={onDrop}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
-        className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
+        whileHover={{ scale: 1.005 }}
+        className={cn(
+          "border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer",
           dragOver
-            ? "border-brand-500 bg-brand-900/10"
-            : "border-gray-700 hover:border-gray-600"
-        }`}
-      >
-        <svg
-          className="w-12 h-12 mx-auto text-gray-500 mb-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-          />
-        </svg>
-        <p className="text-gray-400 mb-2">
-          Drag and drop your CSV file here, or{" "}
-          <label className="text-brand-400 cursor-pointer hover:text-brand-300">
-            browse
-            <input
-              type="file"
-              accept=".csv"
-              onChange={onFileChange}
-              className="hidden"
-            />
-          </label>
-        </p>
-        <p className="text-xs text-gray-500">Supports TD Ameritrade and Robinhood CSV formats</p>
-        {file && (
-          <p className="text-sm text-green-400 mt-4">
-            Selected: {file.name} ({parsedData.length} rows)
-          </p>
+            ? "border-brand-500 bg-brand-900/10 glow-sm"
+            : "border-gray-700/50 hover:border-gray-600"
         )}
-      </div>
+      >
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-brand-600/20 to-purple-600/20 flex items-center justify-center">
+          <Upload className="w-7 h-7 text-brand-400" />
+        </div>
+        <p className="text-gray-300 mb-2 font-medium">
+          Drag and drop your CSV file here
+        </p>
+        <p className="text-sm text-gray-500 mb-4">or</p>
+        <label>
+          <Button variant="outline" size="sm" className="cursor-pointer" asChild>
+            <span>
+              <FileSpreadsheet className="w-4 h-4 mr-1.5" />
+              Browse Files
+            </span>
+          </Button>
+          <input type="file" accept=".csv" onChange={onFileChange} className="hidden" />
+        </label>
+        <p className="text-xs text-gray-600 mt-4">Supports TD Ameritrade and Robinhood CSV formats</p>
+        {file && (
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <Badge variant="success">
+              <Check className="w-3 h-3 mr-1" />
+              {file.name} ({parsedData.length} rows)
+            </Badge>
+          </div>
+        )}
+      </motion.div>
 
       {/* Preview Table */}
       {previewRows.length > 0 && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">
-              Preview (first {previewRows.length} rows)
-            </h3>
-            <span className="text-sm text-gray-400">{parsedData.length} total rows</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-800">
-                  {headers.map((h) => (
-                    <th key={h} className="text-left px-4 py-3 text-gray-400 font-medium">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {previewRows.map((row, i) => (
-                  <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle>Preview (first {previewRows.length} rows)</CardTitle>
+              <Badge variant="secondary">{parsedData.length} total rows</Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-800">
                     {headers.map((h) => (
-                      <td key={h} className="px-4 py-3 text-gray-300 whitespace-nowrap">
-                        {row[h] || "-"}
-                      </td>
+                      <th key={h} className="text-left px-4 py-3 text-gray-400 font-medium text-xs uppercase tracking-wider">
+                        {h}
+                      </th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                </thead>
+                <tbody>
+                  {previewRows.map((row, i) => (
+                    <tr key={i} className="border-b border-gray-800/40 hover:bg-gray-800/20 transition-colors">
+                      {headers.map((h) => (
+                        <td key={h} className="px-4 py-2.5 text-gray-300 whitespace-nowrap font-mono text-xs">
+                          {row[h] || <span className="text-gray-600">-</span>}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Upload Button */}
       {parsedData.length > 0 && (
         <div className="flex items-center gap-4">
-          <button
-            onClick={handleUpload}
-            disabled={uploading}
-            className="px-6 py-3 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
-          >
-            {uploading ? "Uploading..." : `Upload ${parsedData.length} Trades`}
-          </button>
+          <Button onClick={handleUpload} disabled={uploading} size="lg">
+            {uploading ? (
+              <>
+                <svg className="animate-spin w-4 h-4 mr-2" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Uploading...
+              </>
+            ) : (
+              <>
+                Upload {parsedData.length} Trades
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </Button>
           {uploadResult && (
-            <p className={`text-sm ${uploadResult.includes("Successfully") ? "text-green-400" : "text-red-400"}`}>
+            <div className={cn(
+              "flex items-center gap-1.5 text-sm",
+              uploadResult.includes("Successfully") ? "text-emerald-400" : "text-red-400"
+            )}>
+              {uploadResult.includes("Successfully") ? (
+                <Check className="w-4 h-4" />
+              ) : (
+                <AlertCircle className="w-4 h-4" />
+              )}
               {uploadResult}
-            </p>
+            </div>
           )}
         </div>
       )}
 
       {/* Column Mapping Info */}
       {broker !== "auto" && COLUMN_MAPPINGS[broker] && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
-          <h3 className="text-sm font-medium text-gray-300 mb-3">Column Mapping</h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
-            {Object.entries(COLUMN_MAPPINGS[broker]).map(([from, to]) => (
-              <div key={from} className="text-gray-400">
-                <span className="text-gray-500">{from}</span> &rarr;{" "}
-                <span className="text-brand-400">{to}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm">Column Mapping</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+              {Object.entries(COLUMN_MAPPINGS[broker]).map(([from, to]) => (
+                <div key={from} className="flex items-center gap-2 text-gray-400">
+                  <span className="text-gray-500 font-mono text-xs">{from}</span>
+                  <ArrowRight className="w-3 h-3 text-gray-600" />
+                  <span className="text-brand-400 font-mono text-xs">{to}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
