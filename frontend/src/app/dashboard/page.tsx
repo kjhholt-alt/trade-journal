@@ -6,6 +6,9 @@ import PnlChart from "@/components/charts/PnlChart";
 import WinRateChart from "@/components/charts/WinRateChart";
 import HeatmapChart from "@/components/charts/HeatmapChart";
 import PositionSizeChart from "@/components/charts/PositionSizeChart";
+import DailyPnlChart from "@/components/charts/DailyPnlChart";
+import WinRatePieChart from "@/components/charts/WinRatePieChart";
+import PnlByTickerChart from "@/components/charts/PnlByTickerChart";
 import {
   mockTrades,
   getTradeStats,
@@ -13,6 +16,9 @@ import {
   getWinRateByTicker,
   getHourlyPerformance,
   getPositionSizeDistribution,
+  getDailyPnl,
+  getWinLossDistribution,
+  getPnlByTicker,
 } from "@/data/mockTrades";
 
 export default function DashboardPage() {
@@ -21,6 +27,9 @@ export default function DashboardPage() {
   const winRateData = getWinRateByTicker(mockTrades);
   const hourlyData = getHourlyPerformance(mockTrades);
   const positionData = getPositionSizeDistribution(mockTrades);
+  const dailyPnlData = getDailyPnl(mockTrades);
+  const winLossData = getWinLossDistribution(mockTrades);
+  const pnlByTickerData = getPnlByTicker(mockTrades);
 
   return (
     <div className="space-y-6">
@@ -61,17 +70,38 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* P&L Chart */}
-      <PnlChart data={pnlData} />
+      {/* P&L Charts Section */}
+      <div>
+        <h2 className="text-lg font-semibold text-white mb-4">P&L Analysis</h2>
+        <div className="space-y-6">
+          {/* Cumulative P&L */}
+          <PnlChart data={pnlData} />
 
-      {/* Two column charts */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <WinRateChart data={winRateData} />
-        <PositionSizeChart data={positionData} />
+          {/* Daily P&L */}
+          <DailyPnlChart data={dailyPnlData} />
+
+          {/* Two column: Win Rate Pie & P&L by Ticker */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            <WinRatePieChart data={winLossData} />
+            <WinRateChart data={winRateData} />
+          </div>
+
+          {/* P&L by Ticker Breakdown */}
+          <PnlByTickerChart data={pnlByTickerData} />
+        </div>
       </div>
 
-      {/* Heatmap */}
-      <HeatmapChart data={hourlyData} />
+      {/* Performance Insights Section */}
+      <div>
+        <h2 className="text-lg font-semibold text-white mb-4">Performance Insights</h2>
+        <div className="space-y-6">
+          {/* Two column charts */}
+          <div className="grid lg:grid-cols-2 gap-6">
+            <PositionSizeChart data={positionData} />
+            <HeatmapChart data={hourlyData} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

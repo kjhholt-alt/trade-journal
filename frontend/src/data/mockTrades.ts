@@ -146,3 +146,56 @@ export function getPositionSizeDistribution(trades: Trade[]) {
     };
   });
 }
+
+export function getDailyPnl(trades: Trade[]) {
+  const dailyMap: Record<string, number> = {};
+
+  for (const t of trades) {
+    const date = new Date(t.exit_time).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric"
+    });
+    dailyMap[date] = (dailyMap[date] || 0) + t.pnl;
+  }
+
+  return Object.entries(dailyMap)
+    .map(([date, pnl]) => ({
+      date,
+      pnl: parseFloat(pnl.toFixed(2)),
+    }))
+    .sort((a, b) => {
+      const dateA = new Date(a.date + ", 2025");
+      const dateB = new Date(b.date + ", 2025");
+      return dateA.getTime() - dateB.getTime();
+    });
+}
+
+export function getWinLossDistribution(trades: Trade[]) {
+  const wins = trades.filter((t) => t.pnl > 0).length;
+  const losses = trades.filter((t) => t.pnl <= 0).length;
+
+  return [
+    { name: "Wins", value: wins, fill: "#34d399" },
+    { name: "Losses", value: losses, fill: "#f87171" },
+  ];
+}
+
+export function getPnlByTicker(trades: Trade[]) {
+  const tickerMap: Record<string, { pnl: number; trades: number }> = {};
+
+  for (const t of trades) {
+    if (!tickerMap[t.ticker]) {
+      tickerMap[t.ticker] = { pnl: 0, trades: 0 };
+    }
+    tickerMap[t.ticker].pnl += t.pnl;
+    tickerMap[t.ticker].trades++;
+  }
+
+  return Object.entries(tickerMap)
+    .map(([ticker, data]) => ({
+      ticker,
+      pnl: parseFloat(data.pnl.toFixed(2)),
+      trades: data.trades,
+    }))
+    .sort((a, b) => b.pnl - a.pnl);
+}
