@@ -10,6 +10,7 @@ export interface Trade {
   pnl: number;
   fees: number;
   notes: string;
+  tags: string[];
 }
 
 function randomDate(start: Date, end: Date): Date {
@@ -33,6 +34,19 @@ const noteOptions = [
   "Scalp",
 ];
 
+const tagGroups = [
+  ["momentum", "trend-following"],
+  ["reversal", "support-resistance"],
+  ["breakout", "volume-spike"],
+  ["scalp", "intraday"],
+  ["swing", "multi-day"],
+  ["news-driven", "catalyst"],
+  ["technical", "pattern"],
+  ["emotional", "discipline"],
+  ["planned", "setup-confirmed"],
+  ["impulsive", "fomo"],
+];
+
 export const mockTrades: Trade[] = Array.from({ length: 50 }, (_, i) => {
   const ticker = tickers[Math.floor(Math.random() * tickers.length)];
   const side = sides[Math.floor(Math.random() * sides.length)];
@@ -46,6 +60,21 @@ export const mockTrades: Trade[] = Array.from({ length: 50 }, (_, i) => {
   const entryDate = randomDate(new Date("2025-01-01"), new Date("2025-12-31"));
   const exitDate = new Date(entryDate.getTime() + Math.random() * 8 * 60 * 60 * 1000);
 
+  // Assign 1-3 tags per trade
+  const numTags = Math.floor(Math.random() * 3) + 1;
+  const tradeTags: string[] = [];
+  const usedGroups = new Set<number>();
+
+  for (let t = 0; t < numTags; t++) {
+    let groupIndex = Math.floor(Math.random() * tagGroups.length);
+    while (usedGroups.has(groupIndex) && usedGroups.size < tagGroups.length) {
+      groupIndex = Math.floor(Math.random() * tagGroups.length);
+    }
+    usedGroups.add(groupIndex);
+    const tag = tagGroups[groupIndex][Math.floor(Math.random() * tagGroups[groupIndex].length)];
+    tradeTags.push(tag);
+  }
+
   return {
     id: i + 1,
     ticker,
@@ -58,6 +87,7 @@ export const mockTrades: Trade[] = Array.from({ length: 50 }, (_, i) => {
     pnl,
     fees,
     notes: noteOptions[Math.floor(Math.random() * noteOptions.length)],
+    tags: tradeTags,
   };
 });
 
@@ -198,4 +228,30 @@ export function getPnlByTicker(trades: Trade[]) {
       trades: data.trades,
     }))
     .sort((a, b) => b.pnl - a.pnl);
+}
+
+export function getAllTags(trades: Trade[]): string[] {
+  const tagSet = new Set<string>();
+  for (const trade of trades) {
+    for (const tag of trade.tags) {
+      tagSet.add(tag);
+    }
+  }
+  return Array.from(tagSet).sort();
+}
+
+export function getAllTickers(trades: Trade[]): string[] {
+  const tickerSet = new Set<string>();
+  for (const trade of trades) {
+    tickerSet.add(trade.ticker);
+  }
+  return Array.from(tickerSet).sort();
+}
+
+export function getAllStrategies(trades: Trade[]): string[] {
+  const strategySet = new Set<string>();
+  for (const trade of trades) {
+    strategySet.add(trade.notes);
+  }
+  return Array.from(strategySet).sort();
 }
